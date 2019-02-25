@@ -137,6 +137,8 @@ public class TiFirebaseMessagingService extends FirebaseMessagingService
 			} else {
 				builder.setChannelId("default");
 			}
+		} else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+			builder.sound = Uri.parse("android.resource://" + context.getPackageName() + "/res/raw/notify.mp3");
 		}
 
 		// BigText
