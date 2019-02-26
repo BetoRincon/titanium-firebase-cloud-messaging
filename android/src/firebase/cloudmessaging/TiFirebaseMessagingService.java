@@ -27,27 +27,25 @@ import org.json.JSONObject;
 import org.appcelerator.titanium.util.TiConvert;
 import org.appcelerator.titanium.TiApplication;
 
-public class TiFirebaseMessagingService extends FirebaseMessagingService
-{
+import android.content.ContentResolver;
+
+public class TiFirebaseMessagingService extends FirebaseMessagingService {
 
 	private static final String TAG = "FirebaseMsgService";
 	private static final AtomicInteger atomic = new AtomicInteger(0);
 
 	@Override
-	public void onMessageSent(String msgID)
-	{
+	public void onMessageSent(String msgID) {
 		Log.d(TAG, "Message sent: " + msgID);
 	}
 
 	@Override
-	public void onSendError(String msgID, Exception exception)
-	{
+	public void onSendError(String msgID, Exception exception) {
 		Log.e(TAG, "Send Error: " + msgID + " " + exception);
 	}
 
 	@Override
-	public void onMessageReceived(RemoteMessage remoteMessage)
-	{
+	public void onMessageReceived(RemoteMessage remoteMessage) {
 		HashMap<String, Object> msg = new HashMap<String, Object>();
 		CloudMessagingModule module = CloudMessagingModule.getInstance();
 		Boolean appInForeground = TiApplication.isCurrentActivityInForeground();
@@ -81,8 +79,7 @@ public class TiFirebaseMessagingService extends FirebaseMessagingService
 		}
 	}
 
-	private Boolean showNotification(RemoteMessage remoteMessage)
-	{
+	private Boolean showNotification(RemoteMessage remoteMessage) {
 		Map<String, String> params = remoteMessage.getData();
 		JSONObject jsonData = new JSONObject(params);
 		Boolean appInForeground = TiApplication.isCurrentActivityInForeground();
@@ -98,7 +95,8 @@ public class TiFirebaseMessagingService extends FirebaseMessagingService
 		}
 
 		if (params.get("title") == null && params.get("message") == null && params.get("big_text") == null
-			&& params.get("big_text_summary") == null && params.get("ticker") == null && params.get("image") == null) {
+				&& params.get("big_text_summary") == null && params.get("ticker") == null
+				&& params.get("image") == null) {
 			// no actual content - don't show it
 			showNotification = false;
 		}
@@ -118,8 +116,8 @@ public class TiFirebaseMessagingService extends FirebaseMessagingService
 		notificationIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
 		notificationIntent.putExtra("fcm_data", jsonData.toString());
 
-		PendingIntent contentIntent =
-			PendingIntent.getActivity(this, new Random().nextInt(), notificationIntent, PendingIntent.FLAG_ONE_SHOT);
+		PendingIntent contentIntent = PendingIntent.getActivity(this, new Random().nextInt(), notificationIntent,
+				PendingIntent.FLAG_ONE_SHOT);
 
 		// Start building notification
 
@@ -131,6 +129,7 @@ public class TiFirebaseMessagingService extends FirebaseMessagingService
 		builder.setContentTitle(params.get("title"));
 		builder.setContentText(params.get("message"));
 		builder.setTicker(params.get("ticker"));
+
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 			if (params.get("channelId") != null && params.get("channelId") != "") {
 				builder.setChannelId(params.get("channelId"));
@@ -138,7 +137,44 @@ public class TiFirebaseMessagingService extends FirebaseMessagingService
 				builder.setChannelId("default");
 			}
 		} else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-			builder.sound = Uri.parse("android.resource://" + context.getPackageName() + "/res/raw/notify.mp3");
+
+			// Implementación mobijob
+
+			String path = ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + context.getPackageName() + "/"
+					+ Utils.getResourceIdentifier("raw", sound);
+
+			builder.setSound(Uri.parse(path));
+
+			// Implementación módulo para MR
+
+			// String sound = params.get("sound");
+
+			// Log.d("Notification", "createNotification sound.equals(null) " +
+			// sound.equals(null));
+
+			// Log.d("Notification", "createNotification sound.equals('') " +
+			// sound.equals(""));
+
+			// Log.d("Notification", "createNotification with sound " + sound + " at " +
+			// sound);
+
+			// try {
+			// if (!params.containsKey("sound") || sound.equals("")) {
+
+			// builder.setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION));
+
+			// } else {
+
+			// String path = ContentResolver.SCHEME_ANDROID_RESOURCE + "://" +
+			// context.getPackageName() + "/"
+			// + Utils.getResourceIdentifier("raw", sound);
+
+			// builder.setSound(Uri.parse(path));
+			// }
+			// } catch (Exception e) {
+			// e.printStackTrace();
+			// }
+
 		}
 
 		// BigText
@@ -214,8 +250,7 @@ public class TiFirebaseMessagingService extends FirebaseMessagingService
 		return true;
 	}
 
-	private Bitmap getBitmapFromURL(String src) throws Exception
-	{
+	private Bitmap getBitmapFromURL(String src) throws Exception {
 		HttpURLConnection connection = (HttpURLConnection) (new URL(src)).openConnection();
 		connection.setDoInput(true);
 		connection.setUseCaches(false); // Android BUG
@@ -223,8 +258,7 @@ public class TiFirebaseMessagingService extends FirebaseMessagingService
 		return BitmapFactory.decodeStream(new BufferedInputStream(connection.getInputStream()));
 	}
 
-	private int getResource(String type, String name)
-	{
+	private int getResource(String type, String name) {
 		int icon = 0;
 		if (name != null) {
 			int index = name.lastIndexOf(".");
